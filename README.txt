@@ -1,0 +1,1 @@
+С помощью pip необходимо установить модули transformers toch и python-telegram-bot и sentencepiece
