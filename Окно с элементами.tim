@@ -1,0 +1,89 @@
+from math import atan2, pi
+
+EPS = 1e-10
+
+
+class Triangle:
+    __slots__ = ['sides', 'angles', '_shift']
+
+    @staticmethod
+    def get_side_square(dx: int, dy: int) -> int:
+        return dx * dx + dy * dy
+
+    @staticmethod
+    def get_angle2(dx1: int, dy1: int, dx0: int, dy0: int) -> float:
+        return abs(atan2(dx1 * dy0 - dx0 * dy1, dx1 * dx0 + dy1 * dy0))
+
+    def __init__(self, x1: int, y1: int, x2: int, y2: int, x3: int, y3: int):
+        dx1 = x2 - x1
+        dy1 = y2 - y1
+        dx2 = x3 - x2
+        dy2 = y3 - y2
+        dx3 = x1 - x3
+        dy3 = y1 - y3
+        self.sides = [
+            self.get_side_square(dx1, dy1),
+            self.get_side_square(dx2, dy2),
+            self.get_side_square(dx3, dy3)
+        ]
+        self.angles = [
+            self.get_angle2(dx1, dy1, -dx3, -dy3),
+            self.get_angle2(dx2, dy2, -dx1, -dy1),
+            self.get_angle2(dx3, dy3, -dx2, -dy2)
+        ]
+        self._shift = 0
+
+    def rotate(self, shift: int) -> None:
+        self._shift = shift
+
+    def angle(self, n: int) -> float:
+        return self.angles[(n + self._shift) % 3]
+
+
+input()
+n = int(input())
+sets = set()
+triangles = []
+for _ in range(n):
+    triangles.append(Triangle(*map(int, input().split())))
+for i, tr in enumerate(triangles, 1):                          # Центральный треугольник
+    tr.rotate(0)
+    for i1, tr1 in enumerate(triangles, 1):                    # 1 внешний треугольник
+        if i == i1:
+            continue
+        for side1 in range(3):
+            tr1.rotate(side1)
+            if tr.sides[0] != tr1.sides[side1]:
+                continue
+            for i2, tr2 in enumerate(triangles, 1):            # 2 внешний треугольник
+                if i2 == i or i2 == i1:
+                    continue
+                for side2 in range(3):
+                    tr2.rotate(side2)
+                    if tr.sides[1] != tr2.sides[side2]:
+                        continue
+                    for i3, tr3 in enumerate(triangles, 1):    # 3 внешний треугольник
+                        if i3 == i or i3 == i1 or i3 == i2:
+                            continue
+                        nabor = frozenset({i, i1, i2, i3})
+                        if nabor in sets:
+                            continue
+                        for side3 in range(3):
+                            tr3.rotate(side3)
+                            if tr.sides[2] != tr3.sides[side3]:
+                                continue
+                            # Проверка на существование треугольника
+                            angle1 = tr.angle(0) + tr1.angle(1) + tr3.angle(0)
+                            if abs(angle1 - pi) > EPS:
+                                continue
+                            angle2 = tr.angle(1) + tr2.angle(1) + tr1.angle(0)
+                            if abs(angle2 - pi) > EPS:
+                                continue
+                            angle3 = tr.angle(2) + tr3.angle(1) + tr2.angle(0)
+                            if abs(angle3 - pi) > EPS:
+                                continue
+                            sets.add(nabor)
+
+sets = [' '.join(map(str, row)) for row in sets]
+print(len(sets))
+print('\n'.join(sets))
